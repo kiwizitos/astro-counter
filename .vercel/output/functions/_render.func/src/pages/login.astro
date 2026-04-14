@@ -1,0 +1,15 @@
+---
+/**
+ * Login page — auth form island.
+ */
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import AuthForm from '@/components/islands/AuthForm';
+---
+
+<BaseLayout title="Entrar">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div class="w-full max-w-md">
+      <AuthForm client:load />
+    </div>
+  </div>
+</BaseLayout>

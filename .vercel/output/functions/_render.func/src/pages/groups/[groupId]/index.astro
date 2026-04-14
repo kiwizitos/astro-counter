@@ -1,0 +1,65 @@
+---
+/**
+ * Group detail page — shows counters, group header, etc.
+ * Route: /groups/[groupId]
+ */
+import AppLayout from '@/components/layout/AppLayout.astro';
+import GroupHeader from '@/components/islands/GroupHeader';
+import CounterGrid from '@/components/islands/CounterGrid';
+import CreateCounterModal from '@/components/islands/CreateCounterModal';
+import { createServerClient } from '@/lib/supabaseServer';
+
+const { groupId } = Astro.params;
+const { user } = Astro.locals;
+const userId = user!.id;
+
+const { supabase } = createServerClient(Astro.request);
+
+const { data: membership } = await supabase
+  .from('group_members')
+  .select('id')
+  .eq('group_id', groupId!)
+  .eq('user_id', userId)
+  .maybeSingle();
+
+if (!membership) {
+  return Astro.redirect('/dashboard?error=not-member');
+}
+
+const { data: group } = await supabase
+  .from('groups')
+  .select('*')
+  .eq('id', groupId!)
+  .single();
+
+if (!group) {
+  return Astro.redirect('/dashboard?error=not-found');
+}
+
+// Serialize only primitive fields to avoid JSON serialization issues with island props
+const groupProps = {
+  id: group.id,
+  name: group.name,
+  description: group.description ?? null,
+  invite_code: group.invite_code,
+  owner_id: group.owner_id,
+  created_at: group.created_at,
+  updated_at: group.updated_at,
+};
+---
+
+<AppLayout title={group.name}>
+  <div class="space-y-6">
+    <!-- Group header: name, invite code, members -->
+    <GroupHeader group={groupProps} userId={userId} client:load />
+
+    <!-- Counters section -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Contadores</h2>
+        <CreateCounterModal groupId={groupId!} userId={userId} client:load />
+      </div>
+      <CounterGrid groupId={groupId!} userId={userId} client:load />
+    </div>
+  </div>
+</AppLayout>
