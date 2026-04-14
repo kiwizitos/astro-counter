@@ -147,12 +147,14 @@ export function useJoinGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { inviteCode: string; userId: string }) => {
-      const { data: group, error: findError } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('invite_code', input.inviteCode.toUpperCase())
-        .single();
-      if (findError) throw new Error('Código de convite inválido.');
+      // Use security-definer RPC to find the group by invite_code,
+      // bypassing RLS (the user is not a member yet, so a direct SELECT would fail).
+      const { data: groups, error: findError } = await supabase
+        .rpc('get_group_by_invite_code', { p_invite_code: input.inviteCode.toUpperCase() });
+      if (findError || !groups || groups.length === 0) {
+        throw new Error('Código de convite inválido.');
+      }
+      const group = groups[0] as Group;
 
       // Check if already a member
       const { data: existing } = await supabase

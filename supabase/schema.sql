@@ -29,10 +29,11 @@ drop trigger if exists set_counters_updated_at on public.counters;
 drop trigger if exists set_groups_updated_at   on public.groups;
 drop trigger if exists set_profiles_updated_at on public.profiles;
 
-drop function if exists public.handle_new_user()      cascade;
-drop function if exists public.update_counter_value() cascade;
-drop function if exists public.set_updated_at()       cascade;
-drop function if exists public.get_my_group_ids()     cascade;
+drop function if exists public.handle_new_user()            cascade;
+drop function if exists public.update_counter_value()       cascade;
+drop function if exists public.set_updated_at()             cascade;
+drop function if exists public.get_my_group_ids()           cascade;
+drop function if exists public.get_group_by_invite_code(text) cascade;
 
 drop view if exists public.my_group_ids cascade;
 
@@ -127,6 +128,22 @@ as $$
 $$;
 
 grant execute on function public.get_my_group_ids() to authenticated;
+
+-- Retorna um grupo pelo invite_code ignorando RLS.
+-- Necessário para que um usuário possa entrar num grupo antes de ser membro.
+create or replace function public.get_group_by_invite_code(p_invite_code text)
+returns setof public.groups
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select * from public.groups
+  where invite_code = upper(p_invite_code)
+  limit 1;
+$$;
+
+grant execute on function public.get_group_by_invite_code(text) to authenticated;
 
 -- 6. FUNCTIONS E TRIGGERS
 
