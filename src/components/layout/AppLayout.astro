@@ -1,0 +1,35 @@
+---
+/**
+ * App layout — authenticated pages wrapper.
+ * Includes sticky header with user info.
+ * NOTE: QueryProvider deve ser adicionado em cada página que precise de TanStack Query.
+ *       Islands React são hidratadas independentemente — slot não propaga contexto React.
+ */
+import BaseLayout from './BaseLayout.astro';
+import AppHeader from './AppHeader';
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+const { user } = Astro.locals;
+
+const userName = (user?.user_metadata?.full_name as string | null) ?? null;
+const userEmail = user?.email ?? null;
+const userAvatar = (user?.user_metadata?.avatar_url as string | null) ?? null;
+---
+
+<BaseLayout title={title}>
+  <!-- Header island (interactive: user menu, sign out) -->
+  <AppHeader
+    userEmail={userEmail}
+    userName={userName}
+    userAvatar={userAvatar}
+    client:load
+  />
+
+  <main class="mx-auto w-full max-w-2xl px-4 py-5 pb-24 min-h-[calc(100vh-3.5rem)]">
+    <slot />
+  </main>
+</BaseLayout>

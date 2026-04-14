@@ -1,0 +1,54 @@
+---
+/**
+ * Base HTML layout — wraps all pages.
+ * Provides dark mode class, fonts, global CSS, and Sonner toaster.
+ */
+import '../../styles/globals.css';
+import { Toaster } from 'sonner';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Contador Coletivo',
+  description = 'Registre contagens coletivas com seus amigos em tempo real.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} — Contador Coletivo</title>
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-background">
+    <slot />
+    <!-- Portal root: modais do Radix UI são teleportados aqui, fora de qualquer transform/filter -->
+    <div id="portal-root"></div>
+    <!-- Sonner toast provider (rendered as client island) -->
+    <Toaster
+      richColors
+      position="top-right"
+      toastOptions={{ className: 'font-sans' }}
+      client:load
+    />
+  </body>
+</html>

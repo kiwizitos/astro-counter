@@ -1,0 +1,76 @@
+---
+/**
+ * Counter detail page — full view of a single counter with logs + leaderboard.
+ * Route: /groups/[groupId]/counter/[counterId]
+ */
+import AppLayout from '@/components/layout/AppLayout.astro';
+import CounterCard from '@/components/islands/CounterCard';
+import LogList from '@/components/islands/LogList';
+import Leaderboard from '@/components/islands/Leaderboard';
+import { createServerClient } from '@/lib/supabaseServer';
+
+const { groupId, counterId } = Astro.params;
+const { user } = Astro.locals;
+const userId = user!.id;
+
+const { supabase } = createServerClient(Astro.request);
+
+const { data: membership } = await supabase
+  .from('group_members')
+  .select('id')
+  .eq('group_id', groupId!)
+  .eq('user_id', userId)
+  .maybeSingle();
+
+if (!membership) {
+  return Astro.redirect('/dashboard?error=not-member');
+}
+
+const { data: counter } = await supabase
+  .from('counters')
+  .select('*')
+  .eq('id', counterId!)
+  .eq('group_id', groupId!)
+  .single();
+
+if (!counter) {
+  return Astro.redirect(`/groups/${groupId}?error=not-found`);
+}
+
+// Serialize only primitive fields to avoid JSON serialization issues with island props
+const counterProps = {
+  id: counter.id,
+  group_id: counter.group_id,
+  name: counter.name,
+  unit: counter.unit,
+  description: counter.description ?? null,
+  goal: counter.goal ?? null,
+  deadline: counter.deadline ?? null,
+  current_value: counter.current_value,
+  created_by: counter.created_by,
+  created_at: counter.created_at,
+  updated_at: counter.updated_at,
+};
+---
+
+<AppLayout title={counter.name}>
+  <div class="space-y-5">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+      <a href="/dashboard" class="hover:text-foreground transition-colors">Dashboard</a>
+      <span>/</span>
+      <a href={`/groups/${groupId}`} class="hover:text-foreground transition-colors">Grupo</a>
+      <span>/</span>
+      <span class="text-foreground font-medium truncate">{counter.name}</span>
+    </nav>
+
+    <!-- Counter card (with realtime + add modal) -->
+    <CounterCard counter={counterProps} userId={userId} client:load />
+
+    <!-- Logs + Leaderboard -->
+    <div class="grid gap-4 md:grid-cols-2">
+      <LogList counter={counterProps} client:load />
+      <Leaderboard counterId={counter.id} unit={counter.unit} client:load />
+    </div>
+  </div>
+</AppLayout>
